@@ -1,0 +1,495 @@
+{% extends "blog/base.html" %}
+
+{% block title %}编辑文章 - 我的博客{% endblock %}
+
+{% block extra_css %}
+<style>
+    .editor-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        padding: 2.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .editor-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .editor-header {
+        margin-bottom: 2rem;
+        position: relative;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .editor-header h1 {
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .editor-header p {
+        color: #666;
+        font-size: 1rem;
+    }
+    
+    .form-group {
+        margin-bottom: 2rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.8rem;
+        font-weight: 500;
+        color: #444;
+        font-size: 1.1rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        font-size: 1.05rem;
+        transition: all 0.3s ease;
+        background-color: #fafafa;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #4834d4;
+        background-color: #fff;
+        box-shadow: 0 0 0 3px rgba(72, 52, 212, 0.1);
+    }
+    
+    textarea.form-control {
+        min-height: 350px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+    
+    .btn-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2.5rem;
+    }
+    
+    .btn {
+        padding: 0.9rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.05rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .btn i {
+        font-size: 1.1rem;
+    }
+    
+    .btn-primary {
+        background-color: #4834d4;
+        color: white;
+        box-shadow: 0 4px 10px rgba(72, 52, 212, 0.2);
+    }
+    
+    .btn-primary:hover {
+        background-color: #3a2bb0;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(72, 52, 212, 0.25);
+    }
+    
+    .btn-secondary {
+        background-color: #f5f5f5;
+        color: #333;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #e0e0e0;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* 添加响应式设计 */
+    @media (max-width: 768px) {
+        .editor-container {
+            padding: 1.5rem;
+            margin: 1rem;
+        }
+        
+        .btn {
+            padding: 0.8rem 1.5rem;
+        }
+    }
+    
+    /* 字数统计样式 */
+    .word-count {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: #666;
+        text-align: right;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .word-count-badge {
+        background: #f0f0f0;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: #444;
+        transition: all 0.3s ease;
+    }
+    
+    /* 编辑器工具栏 */
+    .editor-tools {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        background: #f5f7fa;
+        padding: 0.8rem;
+        border-radius: 8px;
+    }
+    
+    .tool-btn {
+        background: white;
+        border: 1px solid #e1e1e1;
+        border-radius: 4px;
+        padding: 0.5rem;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+    }
+    
+    .tool-btn:hover {
+        background: #4834d4;
+        color: white;
+        border-color: #4834d4;
+    }
+    
+    .tool-separator {
+        width: 1px;
+        background: #e1e1e1;
+        margin: 0 0.5rem;
+        align-self: stretch;
+    }
+    
+    /* 草稿状态指示器 */
+    .draft-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 1rem;
+    }
+    
+    .draft-status {
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        background: #f0f0f0;
+        font-size: 0.8rem;
+    }
+    
+    .draft-status.saved {
+        background: #e3f9f4;
+        color: #00b894;
+    }
+    
+    /* 动画效果 */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .pulse {
+        animation: pulse 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-container">
+    <div class="editor-header">
+        <h1>编辑文章</h1>
+        <p>修改您的文章内容，完成后点击保存</p>
+    </div>
+    
+    <form id="editForm" method="post" action="{{ url_for('edit_post', post_id=post.id) }}">
+        <div class="form-group">
+            <label for="title">文章标题</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{ post.title }}" required>
+        </div>
+        
+        <div class="editor-tools">
+            <button type="button" class="tool-btn" onclick="formatText('bold')" title="加粗">
+                <i class="fas fa-bold"></i>
+            </button>
+            <button type="button" class="tool-btn" onclick="formatText('italic')" title="斜体">
+                <i class="fas fa-italic"></i>
+            </button>
+            <button type="button" class="tool-btn" onclick="formatText('heading')" title="标题">
+                <i class="fas fa-heading"></i>
+            </button>
+            <div class="tool-separator"></div>
+            <button type="button" class="tool-btn" onclick="formatText('list')" title="无序列表">
+                <i class="fas fa-list-ul"></i>
+            </button>
+            <button type="button" class="tool-btn" onclick="formatText('ordered-list')" title="有序列表">
+                <i class="fas fa-list-ol"></i>
+            </button>
+            <button type="button" class="tool-btn" onclick="formatText('quote')" title="引用">
+                <i class="fas fa-quote-right"></i>
+            </button>
+            <button type="button" class="tool-btn" onclick="formatText('code')" title="代码块">
+                <i class="fas fa-code"></i>
+            </button>
+            <div class="tool-separator"></div>
+            <button type="button" class="tool-btn" onclick="formatText('link')" title="插入链接">
+                <i class="fas fa-link"></i>
+            </button>
+            <button type="button" class="tool-btn" onclick="formatText('image')" title="插入图片">
+                <i class="fas fa-image"></i>
+            </button>
+        </div>
+        
+        <div class="form-group">
+            <label for="content">文章内容</label>
+            <textarea class="form-control" id="content" name="content" rows="12" required oninput="updateWordCount()">{{ post.content }}</textarea>
+            <div class="word-count">
+                <span>字数统计:</span>
+                <span class="word-count-badge" id="wordCount">0 字</span>
+            </div>
+        </div>
+        
+        <div class="draft-info">
+            <i class="fas fa-save"></i>
+            <span id="saveStatus">上次保存: 刚刚</span>
+            <div class="draft-status" id="draftStatus">已保存</div>
+        </div>
+        
+        <div class="btn-container">
+            <a href="{{ url_for('post', post_id=post.id) }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> 取消
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> 保存修改
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Toast提示框 -->
+<div id="toast" class="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 获取DOM元素
+    const titleInput = document.getElementById('title');
+    const contentInput = document.getElementById('content');
+    const editForm = document.getElementById('editForm');
+    const saveStatus = document.getElementById('saveStatus');
+    const draftStatus = document.getElementById('draftStatus');
+    const wordCountElement = document.getElementById('wordCount');
+    
+    // 字数统计函数
+    function updateWordCount() {
+        const text = contentInput.value.trim();
+        // 使用中文和英文单词的正则表达式来计算字数
+        const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+        const englishWords = (text.replace(/[\u4e00-\u9fa5]/g, '').match(/[a-zA-Z]+/g) || []).length;
+        const totalCount = chineseChars + englishWords;
+        
+        wordCountElement.textContent = `${totalCount} 字`;
+        
+        // 根据字数变化颜色
+        if (totalCount > 1000) {
+            wordCountElement.style.background = '#e3f9f4';
+            wordCountElement.style.color = '#00b894';
+        } else if (totalCount > 500) {
+            wordCountElement.style.background = '#fef9e7';
+            wordCountElement.style.color = '#f39c12';
+        } else {
+            wordCountElement.style.background = '#f0f0f0';
+            wordCountElement.style.color = '#444';
+        }
+    }
+    
+    // 自动保存草稿
+    let saveTimeout;
+    function autoSaveDraft() {
+        clearTimeout(saveTimeout);
+        
+        // 更新状态为"编辑中"
+        draftStatus.textContent = "编辑中...";
+        draftStatus.classList.remove("saved");
+        
+        saveTimeout = setTimeout(() => {
+            localStorage.setItem('draft_title', titleInput.value);
+            localStorage.setItem('draft_content', contentInput.value);
+            
+            // 更新保存状态
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            saveStatus.textContent = `上次保存: ${timeString}`;
+            
+            // 更新状态为"已保存"
+            draftStatus.textContent = "已保存";
+            draftStatus.classList.add("saved");
+            draftStatus.classList.add("pulse");
+            setTimeout(() => draftStatus.classList.remove("pulse"), 500);
+            
+            showToast('草稿已自动保存', 'success');
+        }, 2000);
+    }
+    
+    titleInput.addEventListener('input', function() {
+        autoSaveDraft();
+        updateWordCount();
+    });
+    
+    contentInput.addEventListener('input', function() {
+        autoSaveDraft();
+        updateWordCount();
+    });
+    
+    // 表单提交时清除草稿
+    editForm.addEventListener('submit', function() {
+        localStorage.removeItem('draft_title');
+        localStorage.removeItem('draft_content');
+    });
+    
+    // 加载草稿
+    window.addEventListener('load', function() {
+        const draftTitle = localStorage.getItem('draft_title');
+        const draftContent = localStorage.getItem('draft_content');
+        
+        // 初始化字数统计
+        updateWordCount();
+        
+        if (draftTitle && draftContent) {
+            if (confirm('发现未保存的草稿，是否恢复？')) {
+                titleInput.value = draftTitle;
+                contentInput.value = draftContent;
+                updateWordCount(); // 更新字数统计
+            } else {
+                localStorage.removeItem('draft_title');
+                localStorage.removeItem('draft_content');
+            }
+        }
+    });
+    
+    // 文本格式化工具
+    function formatText(type) {
+        const textarea = document.getElementById('content');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        let formattedText = '';
+        
+        switch(type) {
+            case 'bold':
+                formattedText = `**${selectedText || '粗体文本'}**`;
+                break;
+            case 'italic':
+                formattedText = `*${selectedText || '斜体文本'}*`;
+                break;
+            case 'heading':
+                formattedText = `## ${selectedText || '标题'}`;
+                break;
+            case 'list':
+                formattedText = selectedText.split('\n').map(line => `- ${line}`).join('\n');
+                break;
+            case 'ordered-list':
+                formattedText = selectedText.split('\n').map((line, index) => `${index + 1}. ${line}`).join('\n');
+                break;
+            case 'quote':
+                formattedText = selectedText.split('\n').map(line => `> ${line}`).join('\n');
+                break;
+            case 'code':
+                formattedText = `\`\`\`\n${selectedText || '代码块'}\n\`\`\``;
+                break;
+            case 'link':
+                const url = prompt('请输入链接地址:', 'https://');
+                if (url) {
+                    formattedText = `[${selectedText || '链接文本'}](${url})`;
+                } else {
+                    return;
+                }
+                break;
+            case 'image':
+                const imgUrl = prompt('请输入图片地址:', 'https://');
+                if (imgUrl) {
+                    formattedText = `![${selectedText || '图片描述'}](${imgUrl})`;
+                } else {
+                    return;
+                }
+                break;
+        }
+        
+        // 插入格式化后的文本
+        textarea.focus();
+        const value = textarea.value;
+        textarea.value = value.substring(0, start) + formattedText + value.substring(end);
+        
+        // 设置光标位置
+        const newCursorPos = start + formattedText.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+        
+        // 触发内容变化事件
+        const event = new Event('input', { bubbles: true });
+        textarea.dispatchEvent(event);
+    }
+    
+    // Toast提示框显示函数
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.style.display = 'block';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '2rem';
+        toast.style.right = '2rem';
+        toast.style.padding = '1rem 2rem';
+        toast.style.borderRadius = '8px';
+        toast.style.zIndex = '1000';
+        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        toast.style.animation = 'fadeIn 0.3s ease';
+        
+        // 根据类型设置不同背景色
+        toast.style.background = type === 'success' ? '#00b894' : 
+                               type === 'error' ? '#ff7675' : 
+                               type === 'warning' ? '#fdcb6e' : '#fff';
+        toast.style.color = type === 'info' ? '#2d3436' : '#fff';
+
+        // 3秒后自动隐藏
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+</script>
+{% endblock %} 

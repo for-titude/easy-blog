@@ -1,0 +1,507 @@
+{% extends "blog/base.html" %}
+
+{% block title %}创作文章 - 我的博客{% endblock %}
+
+{% block extra_css %}
+<style>
+    .editor-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        padding: 2.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .editor-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .editor-header {
+        margin-bottom: 2rem;
+        position: relative;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .editor-header h1 {
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .editor-header p {
+        color: #666;
+        font-size: 1rem;
+    }
+    
+    .form-group {
+        margin-bottom: 2rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.8rem;
+        font-weight: 500;
+        color: #444;
+        font-size: 1.1rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        font-size: 1.05rem;
+        transition: all 0.3s ease;
+        background-color: #fafafa;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #4834d4;
+        background-color: #fff;
+        box-shadow: 0 0 0 3px rgba(72, 52, 212, 0.1);
+    }
+    
+    textarea.form-control {
+        min-height: 350px;
+        resize: vertical;
+        line-height: 1.6;
+        font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .btn {
+        padding: 0.8rem 1.8rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .btn i {
+        font-size: 1.1rem;
+    }
+    
+    .btn-primary {
+        background-color: #4834d4;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 10px rgba(72, 52, 212, 0.2);
+    }
+    
+    .btn-primary:hover {
+        background-color: #3a2bb0;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(72, 52, 212, 0.25);
+    }
+    
+    .btn-secondary {
+        background-color: #f5f5f5;
+        color: #333;
+        border: none;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #e0e0e0;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .word-count {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: #666;
+        text-align: right;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .word-count-badge {
+        background: #f0f0f0;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: #444;
+        transition: all 0.3s ease;
+    }
+    
+    .word-count span.low {
+        color: #ff7675;
+    }
+    
+    .word-count span.medium {
+        color: #fdcb6e;
+    }
+    
+    .word-count span.high {
+        color: #00b894;
+    }
+    
+    /* 编辑器工具栏 */
+    .editor-tools {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        background: #f5f7fa;
+        padding: 0.8rem;
+        border-radius: 8px;
+    }
+    
+    .tool-btn {
+        background: white;
+        border: 1px solid #e1e1e1;
+        border-radius: 4px;
+        padding: 0.5rem;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+    }
+    
+    .tool-btn:hover {
+        background: #f0f0f0;
+        border-color: #ccc;
+    }
+    
+    .tool-separator {
+        width: 1px;
+        height: 24px;
+        background: #e1e1e1;
+        margin: 0 0.2rem;
+    }
+    
+    /* 草稿信息 */
+    .draft-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .draft-status {
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        background: #f0f0f0;
+        font-size: 0.8rem;
+    }
+    
+    .draft-status.saved {
+        background: #e3f9f4;
+        color: #00b894;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+        display: none;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .editor-container {
+            margin: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .editor-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .btn {
+            padding: 0.7rem 1.2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-container">
+    <div class="editor-header">
+        <h1>创作新文章</h1>
+        <p>分享您的想法和经验</p>
+    </div>
+    
+    <form id="createForm" method="post" action="{{ url_for('create_post') }}">
+        <div class="form-group">
+            <label for="title">文章标题</label>
+            <input type="text" class="form-control" id="title" name="title" placeholder="请输入文章标题..." required>
+        </div>
+        
+        <div class="form-group">
+            <label for="content">文章内容</label>
+            <div class="editor-tools">
+                <button type="button" class="tool-btn" onclick="formatText('bold')"><i class="fas fa-bold"></i></button>
+                <button type="button" class="tool-btn" onclick="formatText('italic')"><i class="fas fa-italic"></i></button>
+                <button type="button" class="tool-btn" onclick="formatText('underline')"><i class="fas fa-underline"></i></button>
+                <div class="tool-separator"></div>
+                <button type="button" class="tool-btn" onclick="formatText('h1')"><i class="fas fa-heading"></i> 1</button>
+                <button type="button" class="tool-btn" onclick="formatText('h2')"><i class="fas fa-heading"></i> 2</button>
+                <button type="button" class="tool-btn" onclick="formatText('h3')"><i class="fas fa-heading"></i> 3</button>
+                <div class="tool-separator"></div>
+                <button type="button" class="tool-btn" onclick="formatText('list')"><i class="fas fa-list-ul"></i></button>
+                <button type="button" class="tool-btn" onclick="formatText('ordered-list')"><i class="fas fa-list-ol"></i></button>
+                <button type="button" class="tool-btn" onclick="formatText('quote')"><i class="fas fa-quote-right"></i></button>
+                <button type="button" class="tool-btn" onclick="formatText('code')"><i class="fas fa-code"></i></button>
+                <button type="button" class="tool-btn" onclick="formatText('link')"><i class="fas fa-link"></i></button>
+                <button type="button" class="tool-btn" onclick="formatText('image')"><i class="fas fa-image"></i></button>
+            </div>
+            <textarea class="form-control" id="content" name="content" placeholder="开始写作..." required></textarea>
+            <div class="word-count">
+                <span>字数统计:</span>
+                <span class="word-count-badge" id="wordCount">0 字</span>
+            </div>
+        </div>
+        
+        <div class="draft-info">
+            <i class="fas fa-save"></i>
+            <span id="draftStatus" class="draft-status">草稿</span>
+            <span id="lastSaved"></span>
+        </div>
+        
+        <div class="btn-group">
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ url_for('index') }}'">
+                <i class="fas fa-times"></i> 取消
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i> 发布文章
+            </button>
+        </div>
+    </form>
+</div>
+
+<div id="toast" class="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 获取DOM元素
+    const titleInput = document.getElementById('title');
+    const contentInput = document.getElementById('content');
+    const createForm = document.getElementById('createForm');
+    const wordCountElement = document.getElementById('wordCount');
+    const draftStatusElement = document.getElementById('draftStatus');
+    const lastSavedElement = document.getElementById('lastSaved');
+    
+    // 自动保存草稿
+    let saveTimeout;
+    function autoSaveDraft() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            localStorage.setItem('draft_title', titleInput.value);
+            localStorage.setItem('draft_content', contentInput.value);
+            localStorage.setItem('draft_saved_time', new Date().toISOString());
+            
+            draftStatusElement.textContent = '已保存';
+            draftStatusElement.classList.add('saved');
+            lastSavedElement.textContent = '最后保存于 ' + new Date().toLocaleTimeString();
+            
+            showToast('草稿已自动保存', 'success');
+        }, 2000);
+    }
+    
+    // 更新字数统计 - 修复版本
+    function updateWordCount() {
+        const text = contentInput.value.trim();
+        if (!text) {
+            wordCountElement.textContent = '0';
+            wordCountElement.className = '';
+            return;
+        }
+        
+        // 统计中文字符
+        const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+        
+        // 统计英文单词
+        const englishWords = text.replace(/[\u4e00-\u9fa5]/g, '') // 移除中文字符
+                               .replace(/[^\w\s]/g, ' ')          // 将标点符号替换为空格
+                               .split(/\s+/)                      // 按空格分割
+                               .filter(word => word.length > 0);  // 过滤空字符串
+        
+        // 总字数 = 中文字符数 + 英文单词数
+        const totalCount = chineseChars.length + englishWords.length;
+        
+        // 设置字数统计显示
+        wordCountElement.textContent = totalCount;
+        
+        // 根据字数设置不同的样式
+        if (totalCount < 100) {
+            wordCountElement.className = 'low';
+        } else if (totalCount < 500) {
+            wordCountElement.className = 'medium';
+        } else {
+            wordCountElement.className = 'high';
+        }
+    }
+    
+    // 添加事件监听器
+    titleInput.addEventListener('input', autoSaveDraft);
+    contentInput.addEventListener('input', () => {
+        autoSaveDraft();
+        updateWordCount();
+        
+        draftStatusElement.textContent = '编辑中...';
+        draftStatusElement.classList.remove('saved');
+    });
+    
+    // 表单提交时清除草稿
+    createForm.addEventListener('submit', function() {
+        localStorage.removeItem('draft_title');
+        localStorage.removeItem('draft_content');
+        localStorage.removeItem('draft_saved_time');
+    });
+    
+    // 加载草稿
+    window.addEventListener('load', function() {
+        const draftTitle = localStorage.getItem('draft_title');
+        const draftContent = localStorage.getItem('draft_content');
+        const draftSavedTime = localStorage.getItem('draft_saved_time');
+        
+        if (draftTitle || draftContent) {
+            if (confirm('发现未保存的草稿，是否恢复？')) {
+                titleInput.value = draftTitle || '';
+                contentInput.value = draftContent || '';
+                
+                if (draftSavedTime) {
+                    const savedDate = new Date(draftSavedTime);
+                    lastSavedElement.textContent = '最后保存于 ' + savedDate.toLocaleTimeString();
+                }
+                
+                draftStatusElement.textContent = '已恢复';
+                draftStatusElement.classList.add('saved');
+                
+                updateWordCount();
+            } else {
+                localStorage.removeItem('draft_title');
+                localStorage.removeItem('draft_content');
+                localStorage.removeItem('draft_saved_time');
+            }
+        }
+    });
+    
+    // 文本格式化工具
+    function formatText(type) {
+        const textarea = document.getElementById('content');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        let formattedText = '';
+        
+        switch(type) {
+            case 'bold':
+                formattedText = `**${selectedText || '粗体文本'}**`;
+                break;
+            case 'italic':
+                formattedText = `*${selectedText || '斜体文本'}*`;
+                break;
+            case 'underline':
+                formattedText = `<u>${selectedText || '下划线文本'}</u>`;
+                break;
+            case 'h1':
+                formattedText = `# ${selectedText || '一级标题'}`;
+                break;
+            case 'h2':
+                formattedText = `## ${selectedText || '二级标题'}`;
+                break;
+            case 'h3':
+                formattedText = `### ${selectedText || '三级标题'}`;
+                break;
+            case 'list':
+                formattedText = selectedText.split('\n').map(line => `- ${line}`).join('\n');
+                break;
+            case 'ordered-list':
+                formattedText = selectedText.split('\n').map((line, index) => `${index + 1}. ${line}`).join('\n');
+                break;
+            case 'quote':
+                formattedText = selectedText.split('\n').map(line => `> ${line}`).join('\n');
+                break;
+            case 'code':
+                formattedText = `\`\`\`\n${selectedText || '代码块'}\n\`\`\``;
+                break;
+            case 'link':
+                const url = prompt('请输入链接地址:', 'https://');
+                if (url) {
+                    formattedText = `[${selectedText || '链接文本'}](${url})`;
+                } else {
+                    return;
+                }
+                break;
+            case 'image':
+                const imgUrl = prompt('请输入图片地址:', 'https://');
+                if (imgUrl) {
+                    formattedText = `![${selectedText || '图片描述'}](${imgUrl})`;
+                } else {
+                    return;
+                }
+                break;
+        }
+        
+        // 插入格式化后的文本
+        textarea.focus();
+        const value = textarea.value;
+        textarea.value = value.substring(0, start) + formattedText + value.substring(end);
+        
+        // 设置光标位置
+        const newCursorPos = start + formattedText.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+        
+        // 触发内容变化事件
+        const event = new Event('input', { bubbles: true });
+        textarea.dispatchEvent(event);
+    }
+    
+    // Toast提示框显示函数
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.style.display = 'block';
+        
+        // 根据类型设置不同背景色
+        toast.style.background = type === 'success' ? '#00b894' : 
+                               type === 'error' ? '#ff7675' : 
+                               type === 'warning' ? '#fdcb6e' : '#fff';
+        toast.style.color = type === 'info' ? '#2d3436' : '#fff';
+
+        // 3秒后自动隐藏
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+    
+    // 初始化字数统计
+    updateWordCount();
+</script>
+{% endblock %}

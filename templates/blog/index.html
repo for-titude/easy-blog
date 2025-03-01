@@ -1,0 +1,259 @@
+{% extends "blog/base.html" %}
+
+{% block title %}我的文章 - 我的博客{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 文章列表页面样式 */
+    
+    /* 页面标题区域 */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    /* 文章卡片网格布局 */
+    .posts-container {
+        display: grid;
+        gap: 2rem;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+
+    /* 文章卡片样式 */
+    .post-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .post-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .post-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .post-card:hover::before {
+        opacity: 1;
+    }
+
+    .post-header {
+        margin-bottom: 1rem;
+    }
+
+    .post-title {
+        font-size: 1.5rem;
+        color: var(--text-color);
+        text-decoration: none;
+        margin-bottom: 0.5rem;
+        display: block;
+        font-weight: 600;
+    }
+
+    .post-title:hover {
+        color: var(--primary-color);
+    }
+
+    .post-meta {
+        font-size: 0.9rem;
+        color: #666;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .post-meta i {
+        color: var(--primary-color);
+    }
+
+    /* 文章内容截断样式 */
+    .post-content {
+        color: #666;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;  /* 显示3行 */
+        line-clamp: 3;
+    }
+
+    .post-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: auto;
+    }
+
+    /* 空状态提示样式 */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        margin-top: 2rem;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        color: var(--primary-color);
+        animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-20px);
+        }
+        60% {
+            transform: translateY(-10px);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* 筛选按钮样式 */
+    .filters {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: white;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .filter-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 页面内容 -->
+<div class="page-header">
+    <h1><i class="fas fa-book-open"></i> 我的文章</h1>
+    <a href="{{ url_for('create_post') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> 写文章
+    </a>
+</div>
+
+<!-- 文章筛选按钮 -->
+<div class="filters">
+    <button class="filter-btn active" onclick="filterPosts('all')">全部文章</button>
+    <button class="filter-btn" onclick="filterPosts('recent')">最近发布</button>
+    <button class="filter-btn" onclick="filterPosts('oldest')">最早发布</button>
+</div>
+
+<!-- 文章列表或空状态显示 -->
+{% if posts %}
+<div class="posts-container">
+    {% for post in posts %}
+    <article class="post-card">
+        <header class="post-header">
+            <a href="{{ url_for('post', post_id=post.id) }}" class="post-title">{{ post.title }}</a>
+            <div class="post-meta">
+                <span><i class="fas fa-user"></i> {{ post.author }}</span>
+                <span><i class="fas fa-calendar"></i> {{ post.publish.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+        </header>
+        <div class="post-content">
+            {{ post.content }}
+        </div>
+        <div class="post-actions">
+            <a href="{{ url_for('post', post_id=post.id) }}" class="btn btn-primary">
+                <i class="fas fa-book-reader"></i> 阅读全文
+            </a>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-feather-alt"></i>
+    </div>
+    <h2>还没有文章</h2>
+    <p>开始写你的第一篇文章吧！</p>
+    <a href="{{ url_for('create_post') }}" class="btn btn-primary" style="margin-top: 1.5rem;">
+        <i class="fas fa-plus"></i> 写文章
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 文章筛选功能
+function filterPosts(type) {
+    // 更新按钮状态
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // 获取所有文章卡片并转换为数组
+    const posts = document.querySelectorAll('.post-card');
+    const postsArray = Array.from(posts);
+
+    // 根据类型排序
+    switch(type) {
+        case 'recent':
+            // 最近发布排序
+            postsArray.sort((a, b) => {
+                const dateA = new Date(a.querySelector('.post-meta span:last-child').textContent);
+                const dateB = new Date(b.querySelector('.post-meta span:last-child').textContent);
+                return dateB - dateA;
+            });
+            break;
+        case 'oldest':
+            // 最早发布排序
+            postsArray.sort((a, b) => {
+                const dateA = new Date(a.querySelector('.post-meta span:last-child').textContent);
+                const dateB = new Date(b.querySelector('.post-meta span:last-child').textContent);
+                return dateA - dateB;
+            });
+            break;
+    }
+
+    // 重新插入排序后的文章
+    const container = document.querySelector('.posts-container');
+    postsArray.forEach(post => container.appendChild(post));
+}
+</script>
+{% endblock %}
