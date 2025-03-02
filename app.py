@@ -37,9 +37,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAIL_SERVER'] = 'smtp.qq.com'  # QQ邮箱SMTP服务器
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = '2650359040@qq.com'  # 实际QQ邮箱
-app.config['MAIL_PASSWORD'] = 'ybnykbuxphzpdjgj'  # QQ邮箱授权码
-app.config['MAIL_DEFAULT_SENDER'] = ('我的博客', '2650359040@qq.com')  # 替换为您的QQ邮箱
+app.config['MAIL_USERNAME'] = 'admin@admin.com'  # 实际QQ邮箱
+app.config['MAIL_PASSWORD'] = 'abcdfefiafn'  # QQ邮箱授权码
+app.config['MAIL_DEFAULT_SENDER'] = ('我的博客', 'admin@admin.com')  # 替换为您的QQ邮箱
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 migrate = Migrate(app, db)
@@ -297,7 +297,7 @@ def edit_post(post_id):
             post.content = content
             db.session.commit()
             return redirect(url_for('post', post_id=post.id))
-        
+
         # GET 请求时返回编辑表单
         return render_template('blog/edit_post.html', post=post)
     except Exception as e:
@@ -402,7 +402,7 @@ def forgot_password():
 @app.route("/reset-password", methods=["GET", "POST"])
 def reset_password():
     email = request.args.get("email", "")
-    
+
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         code = request.form.get("code", "").strip()
